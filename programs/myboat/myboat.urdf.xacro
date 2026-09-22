@@ -1,0 +1,280 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://ros.org/wiki/xacro" name="myboat">
+  <link name="myboat/base_link">
+  </link>
+  <joint name="myboat/dummy_joint" type="fixed">
+    <parent link="myboat/base_link"/>
+    <child link="myboat/dummy_link"/>
+    <origin xyz="0 0 0.30" rpy="0 0 0"/>
+  </joint>
+
+  <link name="myboat/dummy_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://myboat_description/meshes/myboat_body.STL"/>
+      </geometry>
+      <material name="base_material">
+        <diffuse>1.0 1.0 1.0</diffuse>
+        <specular>1.0 1.0 1.0</specular>
+        <pbr>
+          <metal>
+            <albedo_map>package://myboat_description/models/materials/textures/Boat_Albedo.png</albedo_map>
+            <metalness_map>package://myboat_description/models/materials/textures/Boat_Metalness.png</metalness_map>
+            <roughness_map>package://myboat_description/models/materials/textures/Boat_Roughness.png</roughness_map>
+          </metal>
+        </pbr>
+        <script>
+          <uri>package://myboat_description/models/materials/scripts/</uri>
+          <uri>package://myboat_description/models/materials/textures/</uri>
+          <name>UrbanTile/Boat_Diffuse</name>
+        </script>
+      </material>
+    </visual>
+
+    <collision name="collision">
+      <geometry>
+        <box size="1.8 0.5 0.25"/>
+      </geometry>
+      <origin xyz="0 0 -0.125" rpy="0 0 0"/>
+    </collision>
+
+    <inertial>
+      <mass value="30.0"/>
+      <!-- <mass value="15.0"/> -->
+      <inertia
+        ixx="0.08"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="4.0"
+        iyz="0.0"
+        izz="4.1" />
+    </inertial>
+  </link>
+
+  <gazebo reference="myboat/dummy_link">
+    <material>Gazebo/Yellow</material>
+  </gazebo>
+
+  <link name="zju_link1">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://myboat_description/meshes/IMO2-ZJU.STL" scale="1.3 0.8 1.3"/>
+      </geometry>
+      <material name="whilte" />
+    </visual>
+  </link>
+
+  <joint name="zju_joint1" type="fixed">
+    <origin xyz="0.23 -0.22 -0.13" rpy="0 0 0" />
+    <parent link="myboat/dummy_link"/>
+    <child link="zju_link1"/>
+  </joint>
+
+  <link name="zju_link2">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://myboat_description/meshes/IMO2-ZJU.STL" scale="1.3 0.8 1.3"/>
+      </geometry>
+      <material name="whilte" />
+    </visual>
+  </link>
+
+  <joint name="zju_joint2" type="fixed">
+    <origin xyz="0.23 0.23 -0.13" rpy="0 0 3.14" />
+    <parent link="myboat/dummy_link"/>
+    <child link="zju_link2"/>
+  </joint>
+
+  <gazebo reference="zju_link1">
+    <material>Gazebo/Black</material>
+  </gazebo>
+
+  <!--------===================== added lidar sensor =============================-->
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.05" length="0.1" />
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1" />
+      </material>
+    </visual>
+  </link>
+
+  <!-----  fixed near the front of the boat (x=0.8), slightly above deck level (z=0.2) -->
+  <joint name="lidar_joint" type="fixed">
+    <origin xyz="0.8 0 0.2" rpy="0 0 0" />
+    <parent link="myboat/dummy_link" />
+    <child link="lidar_link" />
+  </joint>
+
+  <!-------  gazebo plugin publishing laser scans -->
+  <gazebo reference="lidar_link">
+    <sensor type="ray" name="lidar_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>180</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_lidar_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/myboat/sensors/lidar/scan</topicName>
+        <frameName>lidar_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-------- lidar close to water level (very low) -->
+  <link name="lidar_water_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.05" length="0.1" />
+      </geometry>
+      <material name="blue">
+        <color rgba="0 0 1 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="lidar_water_joint" type="fixed">
+    <origin xyz="0.8 0 -0.3" rpy="0 0 0" />
+    <parent link="myboat/dummy_link" />
+    <child link="lidar_water_link" />
+  </joint>
+
+  <gazebo reference="lidar_water_link">
+    <sensor type="ray" name="lidar_water_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>180</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_lidar_water_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/myboat/sensors/lidar/scan_water</topicName>
+        <frameName>lidar_water_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!--------  lidar around keel height -->
+  <link name="lidar_keel_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.05" length="0.1" />
+      </geometry>
+      <material name="gray">
+        <color rgba="0.5 0.5 0.5 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="lidar_keel_joint" type="fixed">
+    <origin xyz="0.8 0 -0.05" rpy="0 0 0" />
+    <parent link="myboat/dummy_link" />
+    <child link="lidar_keel_link" />
+  </joint>
+
+  <gazebo reference="lidar_keel_link">
+    <sensor type="ray" name="lidar_keel_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>180</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_lidar_keel_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/myboat/sensors/lidar/scan_keel</topicName>
+        <frameName>lidar_keel_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!---------  lidar around mast height -->
+  <link name="lidar_mast_link">
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0" />
+      <geometry>
+        <cylinder radius="0.05" length="0.1" />
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1" />
+      </material>
+    </visual>
+  </link>
+
+  <joint name="lidar_mast_joint" type="fixed">
+    <origin xyz="0.8 0 0.20" rpy="0 0 0" />
+    <parent link="myboat/dummy_link" />
+    <child link="lidar_mast_link" />
+  </joint>
+
+  <gazebo reference="lidar_mast_link">
+    <sensor type="ray" name="lidar_mast_sensor">
+      <pose>0 0 0 0 0 0</pose>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>180</samples>
+            <resolution>1</resolution>
+            <min_angle>-1.570796</min_angle>
+            <max_angle>1.570796</max_angle>
+          </horizontal>
+        </scan>
+        <range>
+          <min>0.3</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+      </ray>
+      <plugin name="gazebo_ros_lidar_mast_controller" filename="libgazebo_ros_laser.so">
+        <topicName>/myboat/sensors/lidar/scan_mast</topicName>
+        <frameName>lidar_mast_link</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+</robot>
